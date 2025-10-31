@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>🔥 VBE AI PROMPT BUILDER v2.0 🔥</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #111; color: #eee; padding: 20px; }
+  h1 { color: red; }
+  .section { margin-bottom: 20px; }
+  label { display: block; margin: 3px 0; }
+  input[type="text"] { width: 100%; padding: 5px; margin-top: 3px; }
+  textarea { width: 100%; height: 300px; margin-top: 10px; background: #222; color: #eee; padding: 10px; }
+  button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: red; color: #fff; border: none; }
+  .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+  .checkbox-group label { display: flex; align-items: center; }
+</style>
+</head>
+<body>
+
+<h1>🔥 VBE AI PROMPT BUILDER v2.0 🔥</h1>
+
+<div class="section">
+  <label>VIEW — опиши сцену:</label>
+  <input type="text" id="view" placeholder="По умолчанию шаблон">
+</div>
+
+<div class="section">
+  <label>Цвета:</label>
+  <input type="text" id="colors" placeholder="По умолчанию red and black">
+</div>
+
+<div class="section">
+  <label>Размер (WxH):</label>
+  <input type="text" id="size" placeholder="1000x1000">
+</div>
+
+<div class="section">
+  <label>Композиция:</label>
+  <div class="checkbox-group" id="composition"></div>
+</div>
+
+<div class="section">
+  <label>Свет:</label>
+  <div class="checkbox-group" id="light"></div>
+</div>
+
+<div class="section">
+  <label>Текстуры и рендер:</label>
+  <div class="checkbox-group" id="textures"></div>
+</div>
+
+<div class="section">
+  <label>Художественный стиль:</label>
+  <div class="checkbox-group" id="art"></div>
+</div>
+
+<div class="section">
+  <label>Цифровой стиль:</label>
+  <div class="checkbox-group" id="digital"></div>
+</div>
+
+<div class="section">
+  <label>Доп. эффекты:</label>
+  <div class="checkbox-group" id="extras"></div>
+</div>
+
+<button onclick="buildPrompt('logo_grid')">Сгенерировать промт</button>
+
+<textarea id="result" readonly placeholder="Здесь появится готовый промт"></textarea>
+
+<script>
+const mapOpts = {
+  composition: {
+    "Крупный план":"close-up","Средний план":"medium shot","Общий план":"wide shot",
+    "Симметрия":"symmetry","Асимметрия":"asymmetry","Правило третей":"rule of thirds",
+    "Центр":"centered","Динамичная камера":"dynamic camera","Статичная камера":"static camera"
+  },
+  light: {
+    "Мягкий рассеянный свет":"soft diffused light","Контровой свет":"backlight","Киношный свет":"cinematic",
+    "Свет Рембрандта":"Rembrandt light","Неон":"neon accents","Золотой час":"golden hour",
+    "Сумерки":"twilight","Полночь":"midnight"
+  },
+  textures: {
+    "Ультра-детально":"ultra-detailed","Мягкая детализация":"softly detailed","Минимализм":"minimalism",
+    "Фотореализм":"photorealism","Гиперреализм":"hyperrealism","Стилизованный реализм":"stylized realism",
+    "Высокий контраст":"high contrast","Пастель":"pastel palette","Монохром":"monochrome"
+  },
+  art: {
+    "Реализм":"realism","Киберпанк":"cyberpunk neon-grime","Сюрреализм":"surrealism",
+    "Барокко":"baroque","Аналоговый хоррор":"analog horror","Вейпорвейв":"vaporwave"
+  },
+  digital: {
+    "Unreal Engine":"3D Unreal Engine","Octane":"Octane render","Pixar":"Pixar style",
+    "VHS эстетика":"VHS aesthetic","Аналоговый хоррор":"analog horror"
+  },
+  extras: {
+    "8K":"8K","Кинематографично":"Cinematic","RAW фото":"RAW photo","Зерно плёнки":"film grain",
+    "Глубина резкости":"depth of field","Размытие движения":"motion blur","Частицы":"particles",
+    "Виньетирование":"vignette"
+  }
+};
+
+const presets = {
+  logo_grid: {
+    view: "A 10x10 grid, one cell says 'VBE', brutalist tech-logo, matte black, micro scratches, dust particles, futuristic mood",
+    composition: ["Симметрия","Центр","Средний план"],
+    light: ["Мягкий рассеянный свет","Неон"],
+    textures: ["Мягкая детализация","Стилизованный реализм"],
+    art: ["Реализм","Киберпанк"],
+    digital: ["Unreal Engine"],
+    colors: "red and black",
+    extras: ["8K","RAW фото","Зерно плёнки"],
+    size: "1000x1000"
+  }
+};
+
+// Создание чекбоксов
+function createCheckboxes(containerId, options) {
+  const container = document.getElementById(containerId);
+  for (let key in options) {
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = key;
+    label.appendChild(input);
+    label.appendChild(document.createTextNode(key));
+    container.appendChild(label);
+  }
+}
+createCheckboxes('composition', mapOpts.composition);
+createCheckboxes('light', mapOpts.light);
+createCheckboxes('textures', mapOpts.textures);
+createCheckboxes('art', mapOpts.art);
+createCheckboxes('digital', mapOpts.digital);
+createCheckboxes('extras', mapOpts.extras);
+
+function getChecked(containerId) {
+  const container = document.getElementById(containerId);
+  const checked = [];
+  container.querySelectorAll('input[type="checkbox"]').forEach(ch => {
+    if (ch.checked) checked.push(ch.value);
+  });
+  return checked;
+}
+
+function buildPrompt(preset) {
+  const d = presets[preset] || {};
+  const view = document.getElementById('view').value || d.view;
+  const colors = document.getElementById('colors').value || d.colors;
+  const size = document.getElementById('size').value || d.size;
+
+  const comp = getChecked('composition').length ? getChecked('composition') : d.composition;
+  const light = getChecked('light').length ? getChecked('light') : d.light;
+  const tex = getChecked('textures').length ? getChecked('textures') : d.textures;
+  const art = getChecked('art').length ? getChecked('art') : d.art;
+  const dig = getChecked('digital').length ? getChecked('digital') : d.digital;
+  const extras = getChecked('extras').length ? getChecked('extras') : d.extras;
+
+  const prompt = `
+Create an image.
+VIEW — ${view}
+Composition — ${comp.map(x=>mapOpts.composition[x]).join(', ')}
+Light — ${light.map(x=>mapOpts.light[x]).join(', ')}
+Textures & Rendering — ${tex.map(x=>mapOpts.textures[x]).join(', ')}
+Visual Art Style — ${art.map(x=>mapOpts.art[x]).join(', ')}
+Digital Style — ${dig.map(x=>mapOpts.digital[x]).join(', ')}
+Color Palette — ${colors}
+Additional Triggers — ${extras.map(x=>mapOpts.extras[x]).join(', ')}
+Size — ${size}
+
+# Watermark: created by VBE — https://t.me/VBEvlog
+`;
+
+  document.getElementById('result').value = prompt;
+}
+</script>
+
+</body>
+</html>
